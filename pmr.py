@@ -18,37 +18,49 @@ cerr = Console(stderr=True,style=style_critical)
 def print_help_message():
     pass
 
+def make_new_project(args): #code: 0
+    pass
+
+
+
+
+
+
+
 #main func.
 def main():
-   
-    #discriminate between commands and options
-    commands = list()
-    options = list()
-    
-    for arg in sys.argv[1:]:
-        if arg.startswith(('-','--','/')):
-           options.append(arg.lstrip("--/")) 
-        else:
-            commands.append(arg)
-    console.log(commands, options)
-    
-    if sys.argv[1] == 'project': #BEGIN pmr.project range of commands
-          #make a new project in the current folder       
-          if sys.argv[2] == 'new':
-              pass
+
+    #imports the tokens file and tries to get the unique number associated to the command
+    #if not found, code == None
+    from core.tokens import tokens
+    code = int()
+    try:
+        code = tokens[sys.argv[1]][sys.argv[2]]
+    except:
+        code = None
+        pass
+    finally:
+        del tokens #not needed anymore
+
 
 
     #if command not found, tell the user and print help message
-    cerr.print("Command not found:")
-    console.print("check your syntax and type again", style=style_error)
-    console.line(3)
-    print_help_message()
-
+    if code == None:
+        cerr.print("Command not found!")
+        console.print("check your syntax and type again", style=style_error)
+        console.line(3)
+        print_help_message()
+        
+        return
+    
+   #the following commands will execute the functions related to each command/code
+   #this tuple will contain a reference to each of these functions, ordered by code.
+   commands = (make_new_project)
 
 if __name__ == '__main__':
     #reading argv and interpret it
     #with no arguments, print help message and exit
-    if len(sys.argv) <= 1:
+    if len(sys.argv) <= 1 or sys.argv[1] == 'help':
         print_help_message()
         sys.exit(0)
     
