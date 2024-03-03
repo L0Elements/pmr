@@ -15,12 +15,14 @@ console = Console()
 cerr = Console(stderr=True,style=style_critical)
 
 
-def print_help_message():
+def print_help_message(args=[]): #TODO: implement args to this function.
     pass
 
-def make_new_project(args): #code: 0
-    pass
+def make_new_project(args=[]): #code: 0
+    console.log(args)
 
+def add_file_in_project(args=[]): #code: 1
+    pass
 
 
 
@@ -53,9 +55,14 @@ def main():
         
         return
     
-   #the following commands will execute the functions related to each command/code
-   #this tuple will contain a reference to each of these functions, ordered by code.
-   commands = (make_new_project)
+    #the following commands will execute the functions related to each command/code
+    #this tuple will contain a reference to each of these functions, ordered by code.
+    commands = (make_new_project, add_file_in_project)
+
+    #execute the command, each command will take as argument the other execution arguments (in practice sys.argv[3:]
+    commands[code](sys.argv[3:])
+
+
 
 if __name__ == '__main__':
     #reading argv and interpret it
