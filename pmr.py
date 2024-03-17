@@ -19,7 +19,7 @@ def print_help_message(args=[]): #TODO: implement args to this function.
     pass
 
 def make_new_project(args=[]): #code: 0
-    from core import project
+    from core import project 
     digest = project.eval_args(args)
     
     return project.make_project(digest)
@@ -32,7 +32,7 @@ def add_file_in_project(args=[]): #code: 1
 
 
 
-#main func.
+#main function
 def main():
 
     #imports the tokens file and tries to get the unique number associated to the command
@@ -40,7 +40,7 @@ def main():
     from core.tokens import tokens
     code = int()
     try:
-        code = tokens[sys.argv[1]][sys.argv[2]]
+        code = tokens[sys.argv[1]]
     except:
         code = None
         pass
@@ -65,7 +65,7 @@ def main():
     #execute the command, each command will take as argument the other execution arguments (in practice sys.argv[3:]
     #if one exception occours, handle it, print the errors and exit
     try:
-        commands[code](sys.argv[3:])
+        commands[code](sys.argv[2:])
     except Exception as stdexception:
         cerr.print(f"An error has occurred: {type(stdexception).__name__}" )
         cerr.print(stdexception)

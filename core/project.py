@@ -5,27 +5,48 @@ import os
 from rich.console import Console
 from rich import prompt
 
-def make_project(project_dict):
-    console = Console()
+#core.project's console
+pconsole = Console()
+
+#class: make_params
+#contains all the variables that direct the creation of a project
+class make_params:
+    proj_path = ""
+    safe = True
+
+
+
+# function: make_project
+# args: params
+#   type = make_params
+def make_project(params):
+
 
     #checking type:
-    if type(project_dict) != dict:
-        raise ValueError("'project_dict' must be a dictionary")
+    if type(params) != make_params:
+        raise TypeError("'params' is of the wrong type")
 
     #change the directory to the project path
-    os.chdir(project_dict["proj_path"])
-
+    os.chdir(params.proj_path)
+    
+    #control system
     if os.path.isdir(".projectpmr"):
-        console.print(f"[green]'.projectpmr'[/green] found in path [green]'{os.getcwd()}'[/green]:")
-        console.print("it's likely that a project already exists")
-        console.print("if you want to continue, [bold red]the content related to the project will be wiped")
-        console.line(2)
-        
-        if not prompt.Confirm.ask("[magenta]Do You wish to continue?[/]", default='n'):
-            return
+        pconsole.print(f"[green]'.projectpmr'[/green] found in path [green]'{os.getcwd()}'[/green]:")
+        pconsole.print("it's likely that a project already exists")
+        pconsole.print("if you want to continue, [bold red]the content related to the project will be wiped")
+        pconsole.line(2)
+        if not params.safe: 
+            confirm = prompt.Confirm.ask("[magenta]Do You wish to continue?[/]", default=False )
+            if not confirm:
+                pconsole.print("Abort", style="bold blue")
+                return #stops the function
+        else:
+            pconsole.print("[bold blue]safe[/] option is set. [green]Auto aborting[/] [red](--no-safe)[red]")
+            return #stops the function
     else:
         os.mkdir(".projectpmr")
-
+    
+    #if control doesn't return, start building the project files
     #the effectctive directory, which will contain every information about the project
     os.chdir(".projectpmr")   
    
@@ -33,20 +54,25 @@ def make_project(project_dict):
     open("files.json", 'w').close() 
     open("config.json", 'w').close()
 
+    #wipe the old directories, to be replaced next, if they exist.
     import shutil
     if os.path.isdir("profiles"):
         shutil.rmtree("profiles")
     if os.path.isdir("output"):
         shutil.rmtree("output")
 
+    #make the desired directories
     os.mkdir("profiles")
     os.mkdir("output")
 
-    #create a .gitignore in the output folder
+    #create a .gitignore in the output folder, the directory change is required for platform-independence
     os.chdir("output")
     with open(".gitignore", 'w') as f:
         f.write('*')
     os.chdir("..")
+
+
+
 
 
 def eval_args(args):
@@ -56,9 +82,7 @@ def eval_args(args):
         raise TypeError("args must be a list or a tuple")
     
     #declaring function variables:
-    comprehension = {\
-            "proj_path": "" \
-            }
+    comprehension = make_params()
    
     #reading string by string
     w = 0 #initialize w
@@ -68,8 +92,8 @@ def eval_args(args):
         #if concerns the directory
         if args[w] == "-d":
             
-            #check if not already setted
-            if comprehension["proj_path"] == "": 
+            #check if not already setted, if 'safe' option is false, the last '-d' option is accepted
+            if comprehension.proj_path == "": 
                 
                 #check if the second element exists, or raises an exception, enriched by notes
                 try:
@@ -82,7 +106,7 @@ def eval_args(args):
                 #if the second element exists, check if the path is a valid directory
                 #with positive response add the absolutized path into dirpath
                 if os.path.isdir(args[w+1]):
-                    comprehension["proj_path"] = os.path.abspath(args[w+1])
+                    comprehension.proj_path = os.path.abspath(args[w+1])
                     w += 2
                     continue
                 else:
@@ -90,13 +114,21 @@ def eval_args(args):
 
             else:
                 raise SyntaxError("Multiple directories chosen - use '-d' once")
+        
+        #if concerns the 'safe' parameter
+        if args[w] in ("-s", "--safe"):
+            comprehension.safe = True
+        if args[w] in ("-S", "--no-safe"):
+            comprehension.safe = False
+            
 
         w += 1
     else:
         del w
-
-    if comprehension["proj_path"] == "":
-        comprehension["proj_path"] = os.getcwd()
+    
+    #final dispositions
+    if comprehension.proj_path == "":
+        comprehension.proj_path = os.getcwd()
 
 
     return comprehension
