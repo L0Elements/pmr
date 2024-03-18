@@ -1,18 +1,6 @@
 import sys
-from rich.console import Console
+from core.common.console import console
 from rich.style import Style
-
-#definition of standard (in the program) styles
-
-style_critical = Style(color="red", bold=True)
-style_error = Style(color="red", italic=True)
-style_warning = Style(color="yellow", italic=True)
-
-#default console
-console = Console()
-
-#err console
-cerr = Console(stderr=True,style=style_critical)
 
 
 def print_help_message(args=[]): #TODO: implement args to this function.
@@ -20,12 +8,14 @@ def print_help_message(args=[]): #TODO: implement args to this function.
 
 def make_new_project(args=[]): #code: 0
     from core import project 
-    digest = project.eval_args(args)
+    params = project.make_params(args)
     
-    return project.make_project(digest)
+    return project.make_project(params)
 
 def add_file_in_project(args=[]): #code: 1
-    pass
+    from core import files 
+    
+    params = files.file_parameters(args)
 
 
 
@@ -51,8 +41,8 @@ def main():
 
     #if command not found, tell the user and print help message
     if code == None:
-        cerr.print("Command not found!")
-        console.print("check your syntax and type again", style=style_error)
+        console.print("Command not found!", style="red")
+        console.print("check your syntax and type again")
         console.line(3)
         print_help_message()
         
@@ -63,29 +53,7 @@ def main():
     commands = (make_new_project, add_file_in_project)
 
     #execute the command, each command will take as argument the other execution arguments (in practice sys.argv[3:]
-    #if one exception occours, handle it, print the errors and exit
-    try:
-        commands[code](sys.argv[2:])
-    except Exception as stdexception:
-        cerr.print(f"An error has occurred: {type(stdexception).__name__}" )
-        cerr.print(stdexception)
-
-        if '__notes__' in stdexception.__dict__:
-            console.rule(style="bold white")
-            for note in stdexception.__notes__:
-                console.print(note, style=style_error)
-        console.rule(style="bold white")
-        console.line(2)
-
-        #ask the user if (s)he wants to see the traceback
-        conf = console.input("Would you like to see the tracebacks? (y) -> ")
-       
-        if conf.lower() == 'y':
-            console.print_exception()
-
-        sys.exit(1)
-
-
+    commands[code](sys.argv[2:])
 
 
 if __name__ == '__main__':
