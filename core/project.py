@@ -2,15 +2,50 @@
 import os.path
 import os
 
-from core.common.clargs.baseparameters import BaseParameters
-from core.common.failure import Failure
+from .common.clargs.baseparameters import BaseParameters
+from .common.failure import Failure
 
-from core.common.console import console
+from .common.console import console
 from rich import prompt
 
 class make_params(BaseParameters):
-    pass
+    working_dir = os.getcwd() 
 
+    def eval_args(self, args):
+        super().eval_args(args)
+        current_path = os.getcwd()
+        w = 0 #initialize w
+        
+        while w < len(args):
+
+            #if concerns the directory
+            if args[w] == "-d":
+             
+                #check if not already setted
+                if self.working_dir == current_path: 
+                 
+                    #check if the second element exists, or raises an exception, enriched by notes
+                    if w+1 >= len(args):
+                        Failure("Wrong syntax used", "'-d' command truncates before the directory is given").throw()
+    
+                    #if the second element exists, check if the path is a valid directory
+                    #with positive response add the absolutized path into dirpath
+                    if os.path.isdir(args[w+1]):
+                        self.working_dir = os.path.abspath(args[w+1])
+                        w += 2
+                        continue
+                    else:
+                        Failure("Directory not found", "provided path isn't a directory,", "doesn't exist or cannot be accessed").throw()
+    
+                else:
+                    e = Failure("Multiple directories chosen") 
+                    e.add_hint("use '-d' once")
+                    e.throw()
+
+            w += 1
+        else:
+            del w
+            del current_path
 
 
 def make_project(params):
@@ -42,8 +77,8 @@ def make_project(params):
     os.chdir(".projectpmr")   
    
     #create the required files
-    open("files.json", 'w').close() 
-    open("config.json", 'w').close()
+    _initialize_json("files.json") 
+    _initialize_json("config.json")
 
     #wipe the old directories, to be replaced next, if they exist.
     import shutil
@@ -63,6 +98,8 @@ def make_project(params):
     os.chdir("..")
 
 
-
+def _initialize_json(path):
+    with open(path, 'w', encoding="utf-8") as f:
+        f.write("[]")
 
 
