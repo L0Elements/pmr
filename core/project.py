@@ -4,6 +4,7 @@ import os
 
 from .common.clargs.baseparameters import BaseParameters
 from .common.failure import Failure
+from .common.tools import related_project
 
 from .common.console import console
 from rich import prompt
@@ -46,7 +47,14 @@ class make_params(BaseParameters):
         else:
             del w
             del current_path
+        
+        #check if provided directory is part of another project
+        finding = related_project(os.path.join(self.working_dir, '..'))
 
+        if finding != None:
+            Failure(f"'{self.working_dir}' is inside another project", f"project found in '{finding}'").throw()
+        else:
+            pass
 
 def make_project(params):
 

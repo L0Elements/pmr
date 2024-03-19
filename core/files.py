@@ -4,6 +4,7 @@
 from .common.clargs.baseparameters import BaseParameters
 from .common.failure import Failure
 from .common.console import console
+from .common.tools import related_project
 import os.path, os
 
 import json
@@ -55,35 +56,20 @@ class file_parameters(BaseParameters):
         
 
         if os.path.isfile(filepath):
-            self.filepath = self.relative_path_in_project(filepath)
+            self.proj_dir = related_project(os.path.dirname(filepath))
+
+            if self.proj_dir != None:
+                self.filepath = os.path.relpath(filepath, self.proj_dir)
+            
+            else:
+                Failure("Path provided is not bound to a project").throw()
+
 
         else:
             e = Failure("path not provided or doesn't point to an existing file")
             e.add_hint("Use the syntax 'pmr add/rm [file] <commands>'")
             e.throw()
 
-
-
-    #find the path relative to the project, given the path to a file
-    def relative_path_in_project(self ,path):
-        #the file's directory
-        directory = os.path.abspath(os.path.dirname(path))
-
-        #stops when it reaches the filesystem root
-        while os.path.splitroot(directory)[2] != '':
-
-            #if directory contains the project, proj_dir exists
-            proj_dir = os.path.join(directory, ".projectpmr")
-            
-            #check if proj_dir exists
-            if os.path.isdir(proj_dir):
-                #returns the relative path
-                self.proj_dir = proj_dir
-                return os.path.relpath(path, directory)
-            
-            
-            #down by one directory
-            directory = os.path.normpath(os.path.join(directory, ".."))
                 
 def get_json():
     with open("files.json", "r", encoding="utf-8") as f:
@@ -98,7 +84,7 @@ def get_json():
     
 def add_file(params):
     
-    os.chdir(params.proj_dir)
+    os.chdir(os.path.join(params.proj_dir, ".projectpmr"))
     content = get_json()
 
 
@@ -118,7 +104,7 @@ def add_file(params):
 def remove_file(params):
     path = params.filepath
     
-    os.chdir(params.proj_dir)
+    os.chdir(os.path.join(params.proj_dir, ".projectpmr"))
     
     content = get_json()
     index = find_entry(path, content)

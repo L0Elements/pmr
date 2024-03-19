@@ -1,9 +1,6 @@
 #this is the BaseParameters class 
 #this class(along with is derivates) is in charge of these functions:
 #interpreting the command-line arguments and storing them in the object fields.
-import os
-import os.path
-
 from core.common.failure import Failure
 
 class BaseParameters:
