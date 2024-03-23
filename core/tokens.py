@@ -8,6 +8,7 @@ tokens = {\
         'new': 0, \
         'add': 1, \
         'rm': 2, 'remove': 2, \
+        'list': 3, \
 
         'build': None, \
         'package': None, \

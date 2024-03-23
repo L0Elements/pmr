@@ -24,9 +24,12 @@ def add_file_in_project(args=[]): #code: 1
 def remove_file_from_project(args=[]):
     from core import files
 
-    params = files.file_parameters(args)
-    return files.remove_file(params)
+    return files.remove_file(args)
 
+def list_files(args=[]):
+    from core import files
+
+    files.print_files(args)
 
 #main function
 def main():
@@ -56,7 +59,7 @@ def main():
     
     #the following commands will execute the functions related to each command/code
     #this tuple will contain a reference to each of these functions, ordered by code.
-    commands = (make_new_project, add_file_in_project, remove_file_from_project)
+    commands = (make_new_project, add_file_in_project, remove_file_from_project, list_files)
 
     #execute the command, each command will take as argument the other execution arguments (in practice sys.argv[3:]
     commands[code](sys.argv[2:])

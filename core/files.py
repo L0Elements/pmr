@@ -81,43 +81,67 @@ def get_json():
             fail.add_note(f"error encountered in line {err.lineno}, {err.colno}")
             fail.add_hint("Make sure this is valid JSON code")
             fail.throw()
-    
+
+def update_json(content):
+    with open("files.json", 'w', encoding='utf-8') as f:
+        json.dump(content, f, indent='\t')
+
 def add_file(params):
     
     os.chdir(os.path.join(params.proj_dir, ".projectpmr"))
     content = get_json()
 
 
-    with open("files.json", "w", encoding="utf-8") as f:
-        entry = {"name": params.name, "path": params.filepath}
+    entry = {"name": params.name, "path": params.filepath}
 
-        if not is_duplicate(entry["name"], entry["path"] , content):
-            content.append(entry) 
-        
-            json.dump(content, f, indent='\t')
-        
-        else:
-            json.dump(content, f, indent='\t')
-            Failure("pmr doesn't admit duplicates").throw()
-
-
-def remove_file(params):
-    path = params.filepath
-    
-    os.chdir(os.path.join(params.proj_dir, ".projectpmr"))
-    
-    content = get_json()
-    index = find_entry(path, content)
-    if index != None:
-        content.pop(index)
+    if not is_duplicate(entry["name"], entry["path"] , content):
+        content.append(entry) 
+  
+        update_json(content)
+         
+        console.print("[blue]new file added: ")
+        console.print(f"'{entry['path']}' with name = '{entry['name']}'")
     else:
-        e = Failure("Entry not found")
-        e.add_hint("perhaps the file provided wasn't added in the project")
+        e = Failure("pmr doesn't admit duplicates")
+        e.add_note(f"{entry['path']} already included or name {entry['name']} already used")
+        e.add_hint("if you want to include a file with the same name but a different directory of another file, you should use the '--name' directive")
+        e.add_hint("remember: if you don't provide a name, pmr will chose the file name", "you can always change the name in files.json")
         e.throw()
-    with open("files.json", 'w', encoding="utf-8") as f:
-        json.dump(content, f, indent='\t')
 
-    return index
+def remove_file(identifiers): 
+    identifiers = frozenset(identifiers)
+    successes = 0
+    failures = 0
+    
+    prj_path = related_project('.')
+    
+    if prj_path == None:
+        Failure("you are currently outside a valid project").throw()
+        #program end
+    
+    os.chdir(os.path.join(prj_path, '.projectpmr'))
+    content = get_json()
+    os.chdir("..")
+
+    for identifier in identifiers:
+        entry = find_entry(identifier, content)
+        if entry != None:
+            content.pop(entry)
+            console.print("[green]removed[/] ", identifier)
+            successes += 1
+        else:
+            console.print(identifier, " was not found", style='bright_red')
+            failures += 1
+
+    if successes != 0: #avoid to rewrite a file if nothing was changed
+        os.chdir(".projectpmr")
+        update_json(content)
+        os.chdir("..")
+
+    console.print(f"removed {successes} files, it was not possible to remove {failures} files")
+
+
+
 
 def is_duplicate(name, path , contents):
     
@@ -146,14 +170,41 @@ def get_unique_attributes(contents):
 
     return (names, filepaths)
 
-def find_entry(path, contents):
-    paths = get_unique_attributes(contents)[1]
+def find_entry(identifier, contents):
+    attributes = get_unique_attributes(contents)
 
 
-    for i in range(len(paths)):
+    for i in range(len(attributes[0])):
         
-        if path == paths[i]:
+#        if identifier == attributes[0][i] or os.path.samefile(identifier, attributes[1][i]):
+#            return i
+
+        if os.path.isfile(identifier):
+            if os.path.samefile(identifier, attributes[1][i]):
+                return i
+        if identifier == attributes[0][i]:
             return i
     else:
         return None
 
+def print_files(args=[]):
+    prj_path = related_project(".")
+    
+    if prj_path == None:
+        Failure("you are currently outside a valid project").throw()
+
+    os.chdir(os.path.join(prj_path, ".projectpmr"))
+    content = get_json()
+
+    console.print("files in", prj_path, style="bold magenta")
+    console.line(2)
+    if '-v' in args or '--verbose' in args:
+        console.print_json(data=content)
+    else:
+        attr = get_unique_attributes(content)
+        names = attr[0]
+        paths = attr[1]
+        del attr
+
+        for i in range(len(names)):
+            console.print(f"[bold blue]{names[i]}", " --> ", f"[green]'{paths[i]}'") #format and print the names and the paths
