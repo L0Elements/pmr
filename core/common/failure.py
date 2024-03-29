@@ -10,7 +10,14 @@ class Failure:
     error = str()
     error_notes = []
     hints = []
-   
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.throw()
+
+
     def __init__(self, *args):
         
         if len(args) == 0:

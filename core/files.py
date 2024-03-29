@@ -33,10 +33,9 @@ class file_parameters(BaseParameters):
             #if concerns the name
             if args[w] == "--name":
                 if w+1 >= len(args):
-                    e = Failure("Incomplete command-line arguments")
-                    e.add_note("'--name' statement truncates before giving the actual name")
-                    e.add_hint("remember to use the syntax '--name [name]'")
-                    e.throw()
+                    with Failure("Incomplete command-line arguments") as e:
+                        e.add_note("'--name' statement truncates before giving the actual name")
+                        e.add_hint("remember to use the syntax '--name [name]'")
                 else:
                     self.name = args[w+1]
                     w += 2
@@ -71,8 +70,8 @@ class file_parameters(BaseParameters):
             e.throw()
 
                 
-def get_json():
-    with open("files.json", "r", encoding="utf-8") as f:
+def get_json(rootpath="."):
+    with open(os.path.join(rootpath, "files.json"), "r", encoding="utf-8") as f:
         try:
             return json.load(f)
         except json.decoder.JSONDecodeError as err:
@@ -82,8 +81,8 @@ def get_json():
             fail.add_hint("Make sure this is valid JSON code")
             fail.throw()
 
-def update_json(content):
-    with open("files.json", 'w', encoding='utf-8') as f:
+def update_json(content, rootpath="."):
+    with open(os.path.join(rootpath, "files.json"), 'w', encoding='utf-8') as f:
         json.dump(content, f, indent='\t')
 
 def add_file(params):
@@ -119,26 +118,46 @@ def remove_file(identifiers):
         Failure("you are currently outside a valid project").throw()
         #program end
     
-    os.chdir(os.path.join(prj_path, '.projectpmr'))
-    content = get_json()
-    os.chdir("..")
+    projectpmr_dir = os.path.join(prj_path, ".projectpmr")
+    content = get_json(projectpmr_dir)
+    uniqueattr = get_unique_attributes(content)
+
+    names = uniqueattr[0]
+    paths = uniqueattr[1]
+
+    del uniqueattr
 
     for identifier in identifiers:
-        entry = find_entry(identifier, content)
-        if entry != None:
-            content.pop(entry)
+        #used to check if it's a failure or a success.
+        found = False
+
+        if os.path.isfile(identifier): #if the identifier is a file, search between the files
+            
+            #gets the relative path and compare it.
+            relativepath = os.path.relpath(identifier, prj_path)
+            for i in range(len(paths)):
+                if relativepath == paths[i]:
+                    content.pop(i)
+                    found = True
+                    break #stop searching for the file
+        else: #if not, search between the names
+            for i in range(len(names)):
+                if identifier == names[i]:
+                    content.pop(i)
+                    found = True
+                    break #stop searching for the name
+            
+        if found:
             console.print("[green]removed[/] ", identifier)
             successes += 1
         else:
             console.print(identifier, " was not found", style='bright_red')
             failures += 1
 
-    if successes != 0: #avoid to rewrite a file if nothing was changed
-        os.chdir(".projectpmr")
-        update_json(content)
-        os.chdir("..")
+    if successes != 0: #avoid to rewrite the file if nothing was changed
+        update_json(content, projectpmr_dir)
 
-    console.print(f"removed {successes} files, it was not possible to remove {failures} files")
+    console.print(f"removed {successes} files, it wasn't possible to remove {failures} files")
 
 
 
@@ -169,23 +188,6 @@ def get_unique_attributes(contents):
         filepaths.append(i["path"])
 
     return (names, filepaths)
-
-def find_entry(identifier, contents):
-    attributes = get_unique_attributes(contents)
-
-
-    for i in range(len(attributes[0])):
-        
-#        if identifier == attributes[0][i] or os.path.samefile(identifier, attributes[1][i]):
-#            return i
-
-        if os.path.isfile(identifier):
-            if os.path.samefile(identifier, attributes[1][i]):
-                return i
-        if identifier == attributes[0][i]:
-            return i
-    else:
-        return None
 
 def print_files(args=[]):
     prj_path = related_project(".")
