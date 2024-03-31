@@ -2,66 +2,65 @@
 import os.path
 import os
 
-from .common.clargs.baseparameters import BaseParameters
 from .common.failure import Failure
 from .common.tools import related_project
 
 from .common.console import console
 from rich import prompt
 
-class make_params(BaseParameters):
-    working_dir = os.getcwd() 
 
-    def eval_args(self, args):
-        super().eval_args(args)
-        current_path = os.getcwd()
-        w = 0 #initialize w
-        
-        while w < len(args):
-
-            #if concerns the directory
-            if args[w] == "-d":
+def eval_args(args):
+    params = dict()
+    w = 0 #initialize w
+     
+    while w < len(args):
+        #if concerns the directory
+        if args[w] == "-d":
+         
+            #check if not already setted
+            if params.get("directory") == None: 
              
-                #check if not already setted
-                if self.working_dir == current_path: 
-                 
-                    #check if the second element exists, or raises an exception, enriched by notes
-                    if w+1 >= len(args):
-                        Failure("Wrong syntax used", "'-d' command truncates before the directory is given").throw()
-    
-                    #if the second element exists, check if the path is a valid directory
-                    #with positive response add the absolutized path into dirpath
-                    if os.path.isdir(args[w+1]):
-                        self.working_dir = os.path.abspath(args[w+1])
-                        w += 2
-                        continue
-                    else:
-                        Failure("Directory not found", "provided path isn't a directory,", "doesn't exist or cannot be accessed").throw()
-    
+                #check if the second element exists, or raises an exception, enriched by notes
+                if w+1 >= len(args):
+                    Failure("Wrong syntax used", "'-d' command truncates before the directory is given").throw()
+ 
+                #if the second element exists, check if the path is a valid directory
+                #with positive response add the absolutized path into dirpath
+                if os.path.isdir(args[w+1]):
+                    params["directory"] = os.path.abspath(args[w+1])
+                    w += 2
+                    continue
                 else:
-                    e = Failure("Multiple directories chosen") 
-                    e.add_hint("use '-d' once")
-                    e.throw()
-
-            w += 1
-        else:
-            del w
-            del current_path
+                    Failure("Directory not found", "provided path isn't a directory,", "doesn't exist or cannot be accessed").throw()
+ 
+            else:
+                e = Failure("Multiple directories chosen") 
+                e.add_hint("use '-d' once")
+                e.throw()
+        w += 1
+    else:
+        del w
         
-        #check if provided directory is part of another project
-        finding = related_project(os.path.join(self.working_dir, '..'))
+    #if the directory is not given, use the current working directory
+    if params.get("directory") == None:
+        params["directory"] = os.getcwd()
 
-        if finding != None:
-            Failure(f"'{self.working_dir}' is inside another project", f"project found in '{finding}'").throw()
-        else:
-            pass
+    #check if provided directory is part of another project, it excludes the directory to distinguish from a project reset
+    finding = related_project(os.path.join(params["directory"], '..'))
+    if finding != None:
+        Failure(f"'{params['directory']}' is inside another project", f"project found in '{finding}'").throw()
+    else:
+        pass
+
+    #in the end, returns the 'params' dictionary
+    return params
 
 def make_project(params):
 
 
 
     #change the directory to the project path
-    os.chdir(params.working_dir)
+    os.chdir(params['directory'])
     
     #control system
     if os.path.isdir(".projectpmr"):
@@ -69,18 +68,16 @@ def make_project(params):
         console.print("it's likely that a project already exists")
         console.print("if you want to continue, [bold red]the content related to the project will be wiped")
         console.line(2)
-        if not params.safe: 
-            confirm = prompt.Confirm.ask("[magenta]Do You wish to continue?[/]", default=False )
-            if not confirm:
-                console.print("Abort", style="bold blue")
-                return #stops the function
-        else:
-            console.print("[bold blue]safe[/] option is set. [green]Auto aborting[/] [red](--no-safe)[red]")
+
+        #give prompt
+        confirm = prompt.Confirm.ask("[magenta]Do You wish to continue?[/]", default=False )
+        if not confirm:
+            console.print("Abort", style="bold blue")
             return #stops the function
     else:
         os.mkdir(".projectpmr")
     
-    #if control doesn't return, start building the project files
+    #start building the project files
     #the effectctive directory, which will contain every information about the project
     os.chdir(".projectpmr")   
    
@@ -94,6 +91,7 @@ def make_project(params):
         shutil.rmtree("profiles")
     if os.path.isdir("output"):
         shutil.rmtree("output")
+    del shutil
 
     #make the desired directories
     os.mkdir("profiles")
