@@ -9,7 +9,7 @@ def print_help_message(args=[]): #TODO: implement args to this function.
 
 def make_new_project(args=[]): #code: 0
     from core import project 
-    params = project.make_params(args)
+    params = project.eval_args(args)
     
     return project.make_project(params)
 
@@ -17,7 +17,7 @@ def make_new_project(args=[]): #code: 0
 def add_file_in_project(args=[]): #code: 1
     from core import files 
     
-    params = files.file_parameters(args)
+    params = files.eval_args(args)
     return files.add_file(params)
 
 

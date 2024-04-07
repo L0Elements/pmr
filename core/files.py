@@ -1,7 +1,6 @@
 #the 'files.py' module is intended to manage all the source files
 #including and excluding them from the project
 #each file will have a separate json entry, that will be used by other modules in this project
-from .common.clargs.baseparameters import BaseParameters
 from .common.failure import Failure
 from .common.console import console
 from .common.tools import related_project
@@ -9,65 +8,56 @@ import os.path, os
 
 import json
 
-class file_parameters(BaseParameters):
-    filepath = ""
-    proj_dir = ""
-    name = ""
 
-    def __init__(self, args):
-        if len(args) == 0:
-            Failure("File not provided").throw()
-        super().__init__(args)
+ 
+def eval_args(args):
+    params = dict()
     
-    def eval_args(self, args):
-        super().eval_args(args)
+    #checks if the file is provided
+    if len(args) == 0:
+        with Failure("File not provided") as f:
+            f.add_hint("use the syntax 'pmr add [file] <options>'")
 
-        self.get_path(args[0])
-        
-        if self.filepath == None:
-            Failure(f"'{args[0]}' is not bound to a project").throw()
-        
-        w = 1 #because args[0] has just been read
-        while w < len(args):
-
-            #if concerns the name
-            if args[w] == "--name":
-                if w+1 >= len(args):
-                    with Failure("Incomplete command-line arguments") as e:
-                        e.add_note("'--name' statement truncates before giving the actual name")
-                        e.add_hint("remember to use the syntax '--name [name]'")
-                else:
-                    self.name = args[w+1]
-                    w += 2
-                    continue
-            w += 1
-
-        else:
-            #final dispositions
-            del w
-            if self.name == "":
-                self.name = os.path.split(self.filepath)[1]
-
-
-
-    #gets the file path and puts it into self.filepath
-    def get_path(self, filepath):
-        
-
-        if os.path.isfile(filepath):
-            self.proj_dir = related_project(os.path.dirname(filepath))
-
-            if self.proj_dir != None:
-                self.filepath = os.path.relpath(filepath, self.proj_dir)
-            
+    params.update(_get_path(args[0]))
+     
+     
+    w = 1 #because args[0] has just been read
+    while w < len(args):
+        #if concerns the name
+        if args[w] == "--name":
+            if w+1 >= len(args):
+                with Failure("Incomplete command-line arguments") as e:
+                    e.add_note("'--name' statement truncates before giving the actual name")
+                    e.add_hint("remember to use the syntax '--name [name]'")
             else:
-                Failure("Path provided is not bound to a project").throw()
+                params['name'] = args[w+1]
+                w += 2
+                continue
+        w += 1
+    else:
+        #final dispositions
+        del w
+        #if the name is not provided, try to use it's name
+        if params.get('name') == None:
+            params['name'] = os.path.basename(params['filepath'])
+
+    return params
 
 
+
+    #gets the file path, returns a dictionary with the relative path and the project directory, if it doesn't failes
+def _get_path(filepath):
+    if os.path.isfile(filepath):
+        proj_dir = related_project(os.path.dirname(filepath))
+        if proj_dir != None:
+            filepath = os.path.relpath(filepath, proj_dir)
+            return {'proj_dir': proj_dir, 'filepath': filepath} 
         else:
-            e = Failure("path not provided or doesn't point to an existing file")
-            e.add_hint("Use the syntax 'pmr add/rm [file] <commands>'")
-            e.throw()
+            Failure("Path provided is not bound to a project").throw()
+    else:
+        e = Failure("path not provided or doesn't point to an existing file")
+        e.add_hint("Use the syntax 'pmr add [file] <commands>'")
+        e.throw()
 
                 
 def get_json(rootpath="."):
@@ -87,11 +77,11 @@ def update_json(content, rootpath="."):
 
 def add_file(params):
     
-    os.chdir(os.path.join(params.proj_dir, ".projectpmr"))
+    os.chdir(os.path.join(params['proj_dir'], ".projectpmr"))
     content = get_json()
 
 
-    entry = {"name": params.name, "path": params.filepath}
+    entry = {"name": params['name'], "path": params['filepath']}
 
     if not is_duplicate(entry["name"], entry["path"] , content):
         content.append(entry) 
@@ -137,13 +127,13 @@ def remove_file(identifiers):
             relativepath = os.path.relpath(identifier, prj_path)
             for i in range(len(paths)):
                 if relativepath == paths[i]:
-                    content.pop(i)
+                    content[i] = None
                     found = True
                     break #stop searching for the file
         else: #if not, search between the names
             for i in range(len(names)):
                 if identifier == names[i]:
-                    content.pop(i)
+                    content[i] = None
                     found = True
                     break #stop searching for the name
             
@@ -155,6 +145,13 @@ def remove_file(identifiers):
             failures += 1
 
     if successes != 0: #avoid to rewrite the file if nothing was changed
+        #clear all removed elements
+
+        while i < successes:
+            content.remove(None)
+            i += 1
+
+
         update_json(content, projectpmr_dir)
 
     console.print(f"removed {successes} files, it wasn't possible to remove {failures} files")
