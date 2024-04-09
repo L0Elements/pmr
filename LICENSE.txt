@@ -1,7 +1,4 @@
-Copyright (c) 2024- L0Elements
 
-The program is free software, every file in this repository is released under the terms
-of the GNU GENERAL PUBLIC LICENSE version 3 (or any later version)
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
