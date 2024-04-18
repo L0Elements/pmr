@@ -1,4 +1,4 @@
-#these are useful tools used by the lower part of the program to avoid repetitions
+#these are useful tools used by the other parts of the program to avoid repetitions
 import os, os.path
 
 
