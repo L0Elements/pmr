@@ -1,6 +1,5 @@
-#this is the failure class, it will be used if some error happens.
-#it'll be used to separate the python builtin Exceptions from program's errors
-#also, this class will offer more versatility than a python exception
+#this is the failure class, it will be used if some error happens in the front-end code
+#the output from this class will be more readable and user-friendly than  a python exception
 from .console import console
 from rich.markup import escape
 import sys

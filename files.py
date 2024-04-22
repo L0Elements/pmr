@@ -1,9 +1,9 @@
 #the 'files.py' module is intended to manage all the source files
 #including and excluding them from the project
 #each file will have a separate json entry, that will be used by other modules in this project
-from .common.failure import Failure
-from .common.console import console
-from .common.tools import related_project
+from core.failure import Failure
+from core.console import console
+from core.tools import related_project
 import os.path, os
 
 import json
