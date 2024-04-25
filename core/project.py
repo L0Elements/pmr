@@ -1,6 +1,8 @@
 import os.path as ph
 import os
 
+import json
+
 def create_project(path):
     
     working_dir = os.getcwd()
@@ -38,3 +40,12 @@ def create_project(path):
         f.write('*')
     
     os.chdir(working_dir)
+
+
+def get_json(file_path):
+    with open(file_path, "r", encoding="utf-8") as fp:
+        return json.load(fp)
+
+def write_json(file_path, obj):
+    with open(file_path, "w", encoding="utf-8") as fp:
+        json.dump(obj, fp, indent="\t")

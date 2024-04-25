@@ -21,12 +21,10 @@ class Project():
     files_path = None
 
     profiles = []
-    files_list = []
 
-
-    files_editable = None
-    config_editable = None
-    manifest_editable = None
+    files = None
+    config = None
+    manifest = None
     
     #if False, the instance must point to an existing project
     #if True, the instance is a virtual rapresentation of a project
@@ -54,11 +52,17 @@ class Project():
         self.files_path = ph.join(self.main_dir, ".projectpmr", "files.json")
             
         if not self.virtual:
+
+
             if not self.exists():
                e = ProjectError("Project files not found")
                e.add_note(f"make sure that {self.manifest_path}, {self.config_path} and {self.files_path} do exist")
 
                raise e
+            else:
+                self.get()
+            
+
         else:
             if self.is_inner_project():
                 raise ProjectExistsError("Another project exists in a parent directory")
@@ -67,12 +71,28 @@ class Project():
     def create(self):
         if self.virtual:
             cproject.create_project(self.main_dir)
+            self.get()
             self.virtual = False
         else:
             raise ProjectExistsError("the project is not virtual")
 
     
     def sync(self):
-        pass
+        
+        cproject.write_json(self.files_path, self.files)
+        cproject.write_json(self.config_path, self.config)
+        cproject.write_json(self.manifest_path, self.manifest)
 
-    
+    def get(self):
+        
+        self.files = cproject.get_json(self.files_path)
+        self.config = cproject.get_json(self.config_path)
+        self.manifest = cproject.get_json(self.manifest_path)
+
+    def __str__(self):
+
+        string = ""
+        if self.virtual:
+            string += "virtual " 
+
+        return f"<{string}Project at {self.main_dir}>"

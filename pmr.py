@@ -11,7 +11,7 @@ def print_help_message(args=[]): #TODO: implement args to this function.
 
 
 def make_new_project(args=[]): #code: 0
-    import project 
+    from core import project
     
     directory = None
     w = 0 #initialize w
@@ -57,16 +57,8 @@ def make_new_project(args=[]): #code: 0
             return
 
 
-    try:
-        project.Project(directory, create=True).create()
-    except project.ProjectError as e:
+    project.create_project(directory) 
         
-        console.print_exception(show_locals=True)
-
-        with Failure("A project error happened") as f:
-            for note in e.__notes__:
-                f.add_note(note)
-    
     console.print("Empty project initialized at ", directory, style="bold green")
 
 def add_file_in_project(args=[]): #code: 1
