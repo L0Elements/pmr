@@ -1,10 +1,10 @@
 #this is the failure class, it will be used if some error happens in the front-end code
 #the output from this class will be more readable and user-friendly than  a python exception
-from .console import console
+from rich.console import Console
 from rich.markup import escape
 import sys
 
-
+fconsole = Console()
 class Failure:
     error = str()
     error_notes = []
@@ -36,16 +36,16 @@ class Failure:
             self.hints.append(hint)
 
     def throw(self):
-        console.print("An [red]error[/] occurred: ", end="")
-        console.print(escape(self.error), style="red italic")
-        console.line()
+        fconsole.print("An [red]error[/] occurred: ", end="")
+        fconsole.print(escape(self.error), style="red italic")
+        fconsole.line()
 
         for note in self.error_notes:
-            console.print("--> ", escape(note))
+            fconsole.print("--> ", escape(note))
 
-        console.line()
+        fconsole.line()
 
         for hint in self.hints:
-            console.print("hint -> ", escape(hint), style="yellow italic")
+            fconsole.print("hint -> ", escape(hint), style="yellow italic")
 
         sys.exit(1)

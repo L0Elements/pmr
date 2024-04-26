@@ -1,35 +1,29 @@
 import sys
 import os
-from core.console import console
+from rich.console import Console
 from core.failure import Failure
 
 from rich.prompt import Confirm
 
-
-def print_help_message(args=[]): #TODO: implement args to this function.
-    pass
-
-
-def make_new_project(args=[]): #code: 0
-    from core import project
+console = Console()
+def cl_args_eval(clargs=[]):
     
-    directory = None
-    w = 0 #initialize w
-     
-    while w < len(args):
-        if args[w] == "-d":
+    params = {} #the parameters as a dictionary, it'll be the return value
+    w = 0 #iterator
+    while w < len(clargs):
+        if clargs[w] == "-d":
          
             #check if not already setted
-            if directory == None: 
+            if params.get("directory") == None: 
              
                 #check if the second element exists, or raises an exception, enriched by notes
-                if w+1 >= len(args):
+                if w+1 >= len(clargs):
                     Failure("Wrong syntax used", "'-d' command truncates before the directory is given").throw()
  
                 #if the second element exists, check if the path is a valid directory
-                #with positive response add the absolutized path into dirpath
-                if os.path.isdir(args[w+1]):
-                    directory = os.path.abspath(args[w+1])
+                #with positive response add the absolutized path into "directory"
+                if os.path.isdir(clargs[w+1]):
+                    params["directory"] = os.path.abspath(clargs[w+1])
                     w += 2
                     continue
                 else:
@@ -39,14 +33,33 @@ def make_new_project(args=[]): #code: 0
                 e = Failure("Multiple directories chosen") 
                 e.add_hint("use '-d' once")
                 e.throw()
+        
+        elif clargs[w] in ("-v", "--verbose"):
+            params["verbose"] = True
+        
+        elif clargs[w] in ("-q", "--quiet"):
+            params["quiet"] = True
+
+        else:
+            with Failure("Syntax error") as f:
+                f.add_note(f"'{clargs[w]}' parameter was not found")
+                f.add_hint("make sure you wrote the command correctly")
+
         w += 1
     else:
         del w
-     
+    
+    if not params.get("directory"): #explain: if it's None (Automatically evaluated to False), it will be setted at the current directory
+        params["directory"] = os.getcwd()
+    return params
+
+def print_help_message(args=[]):
+    pass
 
 
-    if directory == None:
-        directory = os.getcwd()
+def make_new_project(args=[]): #code: 0
+    from project import Project
+    directory = cl_args_eval(args)["directory"] 
     
     if os.path.isfile(os.path.join(directory, ".projectpmr", "project.pmr")):
         console.print(f"a project exists in [green]'{directory}'")
@@ -55,9 +68,9 @@ def make_new_project(args=[]): #code: 0
         if not p:
             console.print("Abort", style="bold bright_blue")
             return
-
-
-    project.create_project(directory) 
+    
+    Project(directory, create=True).create()
+    
         
     console.print("Empty project initialized at ", directory, style="bold green")
 
@@ -74,9 +87,25 @@ def remove_file_from_project(args=[]):
     return files.remove_file(args)
 
 def list_files(args=[]):
-    import files
+    from project import Project
 
-    files.print_files(args)
+    options = cl_args_eval(args)
+    project = Project(options["directory"])
+
+    if options.get("verbose"):
+        console.print_json(data=project.files)
+    else:
+        from rich.table import Table
+        from rich import box
+        table = Table("Name", "File path", title=f"files indexed in '{options['directory']}'", \
+                box=box.SIMPLE_HEAD, \
+                title_style = "bright_blue", \
+                expand = True, \
+                )
+        for f in project.files:
+            table.add_row(f.get("name", ""), f["path"])
+
+        console.print(table)
 
 #main function
 def main():
