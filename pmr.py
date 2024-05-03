@@ -75,12 +75,28 @@ def make_new_project(args=[]): #code: 0
     console.print("Empty project initialized at ", directory, style="bold green")
 
 def add_file_in_project(args=[]): #code: 1
-    import files 
+    from project import Project
+    from core.tools import related_project
+
+    path = args[0]
+    project = None
     
-    params = files.eval_args(args)
-    return files.add_file(params)
+    #find and set the project, or throws a failure
+    if os.path.isfile(path):
+        prj_path = related_project(os.path.dirname(path))
 
+        if prj_path != None:
+            project = Project(prj_path)
+        else:
+            Failure(f"{path} doesn't belong to a project").throw()
+    else:
+        Failure(f"{path} is not an existing file").throw()
+    
+    file_entry = dict(path=path)
+    project.files.append(file_entry)
+    project.sync()
 
+    console.print(f"{path} added to project")
 def remove_file_from_project(args=[]):
     import files
 
