@@ -4,6 +4,7 @@ import os.path as ph
 from core import project as cproject
 from core.tools import related_project
 
+from core.config import FileConfigurator
 
 class ProjectError(Exception):
     pass
@@ -96,3 +97,62 @@ class Project():
             string += "virtual " 
 
         return f"<{string}Project at {self.main_dir}>"
+    
+    def file_append(self,file):
+        if isinstance(file, dict):
+            file = FileConfigurator(file, convert=True)
+        elif isinstance(file, FileConfigurator):
+            pass
+        else:
+            raise TypeError("`file` must be of 'dict' or 'FileConfigurator' type")
+        
+        file["path"] = ph.relpath(file["path"], self.main_dir)
+
+        if not (self.file_exists(file["path"]) or self.file_exists(file.get("name"))):
+            self.files.append(file())
+        else:
+            raise FileExistsError(f"'{file['path']}' already included or name already used") 
+
+    def file_getindex(self, fileid):
+        #find the file by name or path
+        #check if fileid is None or Empty
+        if not fileid:
+            return None
+        #checks if fileid is a file or not
+        if ph.isfile(fileid):
+            path = ph.relpath(fileid, self.main_dir)
+            
+            i = 0
+            while i < len(self.files):
+                e = self.files[i]
+                if path == e["path"]:
+                   return i
+                i += 1
+        #if path wasn't found, try to find by name
+        names = list()
+        for e in self.files:
+            names.append(e.get("name"))
+
+        i = 0
+        while i < len(names):
+            if not names[i]:
+                pass
+            else:
+                if fileid == names[i]:
+                    return i
+            i += 1
+
+
+
+    def file_get(self, fileid):
+        pass
+    
+    def file_name_exists(self, name):
+        pass
+
+    def file_exists(self, fileid):
+        return self.file_getindex(fileid) != None
+
+    
+    
+

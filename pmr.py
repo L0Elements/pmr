@@ -80,6 +80,8 @@ def add_file_in_project(args=[]): #code: 1
 
     path = args[0]
     project = None
+
+    args.pop(0)
     
     #find and set the project, or throws a failure
     if os.path.isfile(path):
@@ -92,9 +94,40 @@ def add_file_in_project(args=[]): #code: 1
     else:
         Failure(f"{path} is not an existing file").throw()
     
-    file_entry = dict(path=path)
-    project.files.append(file_entry)
-    project.sync()
+    file_entry = dict(path=path, tags=[])
+
+    i = 0
+    while i < len(args):
+
+        if args[i] == "--name":
+            if i+1 < len(args):
+                file_entry["name"] = args[i+1]
+                i += 2
+                continue
+            else: 
+                Failure("Syntax Error", "'--name' directive truncates before name is given").throw()
+        
+        elif args[i] == "--precompile":
+            file_entry["precompile"] = True
+        elif args[i] == "--no-precompile":
+            file_entry["precompile"] = False
+        
+        elif args[i] in ("-t", "--tag"):
+            if i+1 < len(args):
+                file_entry["tags"].append(args[i+1])
+                i += 2
+                continue
+            else: 
+                Failure("Syntax Error", "'--tag' directive truncates before tag is given").throw()
+
+        i += 1
+
+
+    try:
+        project.file_append(file_entry)
+        project.sync()
+    except Exception as e:
+        Failure(str(e)).throw()
 
     console.print(f"{path} added to project")
 def remove_file_from_project(args=[]):

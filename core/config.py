@@ -75,6 +75,7 @@ class BasicConfigurator():
 
 
 class FileConfigurator(BasicConfigurator):
+    index = -1
     valid_entries = dict(\
             name = str, \
             path = str, \
@@ -82,3 +83,7 @@ class FileConfigurator(BasicConfigurator):
             precompile = bool, \
             tags = list | tuple | str, \
             )
+
+    def __init__(self, dictionary={}, convert=True, index=-1):
+        super().__init__(dictionary, convert)
+        self.index = index
