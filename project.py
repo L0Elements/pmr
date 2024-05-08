@@ -44,9 +44,9 @@ class Project():
 
         return (outer != None)
 
-    def __init__(self, main_dir=os.getcwd(), **kwargs):
+    def __init__(self, main_dir=os.getcwd(), create=False):
         self.main_dir = main_dir 
-        self.virtual = bool(kwargs.get("create", False))
+        self.virtual = create
          
         self.manifest_path = ph.join(self.main_dir, ".projectpmr", "project.pmr")
         self.config_path = ph.join(self.main_dir, ".projectpmr", "config.json")
@@ -145,10 +145,9 @@ class Project():
 
 
     def file_get(self, fileid):
-        pass
-    
-    def file_name_exists(self, name):
-        pass
+        i = self.file_getindex(fileid) 
+        if i != None:
+            return self.files[i]
 
     def file_exists(self, fileid):
         return self.file_getindex(fileid) != None

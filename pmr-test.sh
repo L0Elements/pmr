@@ -10,4 +10,4 @@ fi
 cd "$dr"
 
 py_args=($(realpath "../pmr.py") "${@}")
-python3 -m pdb "${py_args[@]}"
+python3 "${py_args[@]}"

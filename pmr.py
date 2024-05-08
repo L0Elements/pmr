@@ -1,9 +1,11 @@
 import sys
 import os
-from rich.console import Console
-from core.failure import Failure
 
 from rich.prompt import Confirm
+from rich.console import Console
+
+from project import Project
+from core.failure import Failure
 
 console = Console()
 def cl_args_eval(clargs=[]):
@@ -58,7 +60,6 @@ def print_help_message(args=[]):
 
 
 def make_new_project(args=[]): #code: 0
-    from project import Project
     directory = cl_args_eval(args)["directory"] 
     
     if os.path.isfile(os.path.join(directory, ".projectpmr", "project.pmr")):
@@ -75,7 +76,6 @@ def make_new_project(args=[]): #code: 0
     console.print("Empty project initialized at ", directory, style="bold green")
 
 def add_file_in_project(args=[]): #code: 1
-    from project import Project
     from core.tools import related_project
 
     path = args[0]
@@ -131,12 +131,29 @@ def add_file_in_project(args=[]): #code: 1
 
     console.print(f"{path} added to project")
 def remove_file_from_project(args=[]):
-    import files
+    from core.tools import related_project
 
-    return files.remove_file(args)
+    fileid = args[0]
+    project = None
+    if os.path.isfile(fileid):
+        project_path = related_project(fileid)
+        if project_path:
+            project = Project(project_path)
+        else:
+            Failure(f"'{fileid}' doesn't belong to a project").throw()
+    else:
+        project = Project()
+
+    i = project.file_getindex(fileid)
+    if i != None:
+        project.files.pop(i)
+        project.sync()
+
+        console.print(fileid, " removed.")
+    else:
+        Failure(f"'{fileid}' not found in project '{project.main_dir}'").throw()
 
 def list_files(args=[]):
-    from project import Project
 
     options = cl_args_eval(args)
     project = Project(options["directory"])
