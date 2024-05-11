@@ -1,4 +1,4 @@
-from types import UnionType
+import custom_types as pmrtp
  
 class BasicConfigurator():
     
@@ -27,8 +27,8 @@ class BasicConfigurator():
         valid_types = self.valid_entries.values()
         #checks if the dictionary values are types
         for tp in valid_types:
-            if not isinstance(tp, type | UnionType)  :
-                raise SyntaxError(f"{tp} must be a type or an UnionType")
+            if not isinstance(tp, type)  :
+                raise SyntaxError(f"{tp} must be a type")
         del valid_types
 
         #checks if the values in the dictionary have the same type of the type in valid_types
@@ -55,10 +55,16 @@ class BasicConfigurator():
 
 
     def __setitem__(self, key, value):
-        if self.is_valid(key, value):
-            self.dictionary[key] = value
+        if key in self.valid_entries:
+            #automatically tries to convert the value in a valid value
+            vtype = self.valid_entries[key]
+            try:
+                self.dictionary[key] = vtype(value)
+            except TypeError:
+                raise ValueError(f"It wasn't possible to convert {value} into {vtype}")
+
         else:
-            raise ValueError()
+            raise KeyError(f"'{key}' is not a valid key in the dictionary")
 
     def __getitem__(self, key):
         return self.dictionary[key]
@@ -75,15 +81,14 @@ class BasicConfigurator():
 
 
 class FileConfigurator(BasicConfigurator):
-    index = -1
     valid_entries = dict(\
             name = str, \
             path = str, \
             is_header = bool, \
             precompile = bool, \
-            tags = list | tuple | str, \
+            tags = pmrtp.array, \
             )
 
     def __init__(self, dictionary={}, convert=True, index=-1):
         super().__init__(dictionary, convert)
-        self.index = index
+
